@@ -35,8 +35,8 @@ def detect(source: str, weights: str, imgsz: int, device: torch.device):
     )  # make dir
 
     # Load model
-    if torchscript:
-        model = torch.jit.load(torchscript, map_location=device)
+    if 'torchscript' in weights:
+        model = torch.jit.load(weights, map_location=device)
         max_stride = 32
     else:
         model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -44,10 +44,6 @@ def detect(source: str, weights: str, imgsz: int, device: torch.device):
         if half:
             model.half()  # to FP16
     imgsz = check_img_size(imgsz, s=max_stride)  # check img_size
-
-    # Get names and colors
-    names = model.module.names if hasattr(model, 'module') else model.names
-    colors = [[np.random.randint(0, 255) for _ in range(3)] for _ in names]
 
     # Run inference
     im0 = cv2.imread(source)
@@ -85,6 +81,10 @@ def detect(source: str, weights: str, imgsz: int, device: torch.device):
     det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
     print('### Done')
+
+    # Get names and colors
+    # names = model.module.names if hasattr(model, 'module') else model.names
+    # colors = [[np.random.randint(0, 255) for _ in range(3)] for _ in names]
 
     # view_img = False
     # save_img = True
