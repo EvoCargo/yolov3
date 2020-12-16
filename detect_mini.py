@@ -24,6 +24,7 @@ torchscript = '' # or 'yolov3-spp.torchscript.pt'
 device = torch.device('cuda:0')
 
 def detect(source: str, weights: str, imgsz: int, device: torch.device):
+    torchscript = 'torchscript' in weights
     half = False  # True or False for regular model, False for torchscript
 
     save_txt = True
@@ -35,7 +36,7 @@ def detect(source: str, weights: str, imgsz: int, device: torch.device):
     )  # make dir
 
     # Load model
-    if 'torchscript' in weights:
+    if torchscript:
         model = torch.jit.load(weights, map_location=device)
         max_stride = 32
     else:
