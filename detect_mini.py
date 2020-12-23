@@ -36,7 +36,6 @@ def detect(source: str, weights: str, traced: str, imgsz: int, device: torch.dev
 
     # Load model
     if traced:
-        # model = torch.jit.load(weights, map_location=device)
         model = YoloFacade.from_checkpoint(weights, traced, device)
     else:
         model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -81,56 +80,3 @@ def detect(source: str, weights: str, traced: str, imgsz: int, device: torch.dev
     det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
     print('### Done')
-
-    # Get names and colors
-    # names = model.module.names if hasattr(model, 'module') else model.names
-    # colors = [[np.random.randint(0, 255) for _ in range(3)] for _ in names]
-
-    # view_img = False
-    # save_img = True
-    # webcam = False
-    # vid_path, vid_writer = None, None
-    # vid_cap = None
-
-    # save_path = str(save_dir / source)
-    # txt_path = (save_dir / 'labels' / source).with_suffix('.txt')
-
-    # s = ''
-    # s += '%gx%g ' % img.shape[2:]  # print string
-    # gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-
-    # # Print results
-    # for c in det[:, -1].unique():
-    #     n = (det[:, -1] == c).sum()  # detections per class
-    #     s += '%g %ss, ' % (n, names[int(c)])  # add to string
-
-    # # Write results
-    # for *xyxy, conf, cls in reversed(det):
-    #     if save_txt:  # Write to file
-    #         xywh = (
-    #             (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()
-    #         )  # normalized xywh
-    #         save_conf = True
-    #         line = (
-    #             (cls, *xywh, conf) if save_conf else (cls, *xywh)
-    #         )  # label format
-    #         with open(txt_path, 'a') as f:
-    #             f.write(('%g ' * len(line)).rstrip() % line + '\n')
-
-    #     if save_img or view_img:  # Add bbox to image
-    #         label = '%s %.2f' % (names[int(cls)], conf)
-    #         plot_one_box(
-    #             xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3
-    #         )
-
-    # # Save results (image with detections)
-    # if save_img:
-    #     cv2.imwrite(save_path, im0)
-
-    # if save_txt or save_img:
-    #     s = (
-    #         f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}"
-    #         if save_txt
-    #         else ''
-    #     )
-    #     print(f"Results saved to {save_dir}{s}")
