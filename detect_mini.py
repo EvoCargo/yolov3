@@ -65,8 +65,8 @@ def detect(source: str, weights: str, traced: str, imgsz: int, device: torch.dev
     agnostic_nms = True
 
     with torch.no_grad():
-        if torchscript:
-            pred = model(img)[0]
+        if traced:
+            pred = model(img)
         else:
             pred = model(img, augment=augment)[0]
 
