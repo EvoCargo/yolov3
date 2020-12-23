@@ -80,7 +80,21 @@ class YoloFacade(torch.nn.Module):
         return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
 
     @classmethod
-    def script(cls yolo_path: File, traced_path: File, scripted_path: File, device: Device):
+    def from_checkpoint(cls, yolo_path: File, traced_path: File, device: Device):
+        '''Loads class from checkpoint(s)
+
+        Args:
+            see `script`
+        '''
+        model = attempt_load(yolo_path.as_posix())
+        detect = model.model[-1]
+        stride = detect.stride.clone().detach()
+        anchor_grid = detect.anchor_grid.clone().detach()
+
+        return cls(traced_path, stride, anchor_grid, device=device)
+
+    @classmethod
+    def script(cls, yolo_path: File, traced_path: File, scripted_path: File, device: Device):
         '''Saves scripted version of Facade to scripted_path
 
         Args:
@@ -89,12 +103,7 @@ class YoloFacade(torch.nn.Module):
             scripted_path: the path for scripted model
             device: the device
         '''
-        model = attempt_load(yolo_path.as_posix())
-        detect = model.model[-1]
-        stride = detect.stride.clone().detach()
-        anchor_grid = detect.anchor_grid.clone().detach()
-
-        facade = cls(traced_path, stride, anchor_grid, device=device)
+        facade = cls.from_checkpoint(yolo_path, traced_path, device)
         scripted = torch.jit.script(facade)
         scripted.save(scripted_path.as_posix())
 

@@ -14,17 +14,16 @@ from utils.general import (
     xyxy2xywh,
 )
 from utils.plots import plot_one_box
+from yolo_scripted import YoloFacade
 
 
 source = 'test_image.jpg'
 weights = 'yolov3-spp.pt'
+traced = 'yolov3-spp.torchscript.pt'
 imgsz = 640
-
-torchscript = '' # or 'yolov3-spp.torchscript.pt'
 device = torch.device('cuda:0')
 
-def detect(source: str, weights: str, imgsz: int, device: torch.device):
-    torchscript = 'torchscript' in weights
+def detect(source: str, weights: str, traced: str, imgsz: int, device: torch.device):
     half = False  # True or False for regular model, False for torchscript
 
     save_txt = True
@@ -36,14 +35,14 @@ def detect(source: str, weights: str, imgsz: int, device: torch.device):
     )  # make dir
 
     # Load model
-    if torchscript:
-        model = torch.jit.load(weights, map_location=device)
-        max_stride = 32
+    if traced:
+        # model = torch.jit.load(weights, map_location=device)
+        model = YoloFacade.from_checkpoint(weights, traced, device)
     else:
         model = attempt_load(weights, map_location=device)  # load FP32 model
-        max_stride = model.stride.max()
         if half:
             model.half()  # to FP16
+    max_stride = model.stride.max()
     imgsz = check_img_size(imgsz, s=max_stride)  # check img_size
 
     # Run inference
