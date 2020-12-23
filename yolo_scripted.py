@@ -1,9 +1,12 @@
 from pathlib import Path
+from typing import List
 
 import torch
 from torch import Tensor, device as Device
 
 from models.experimental import attempt_load
+from utils.general import non_max_suppression
+
 
 File = Path
 
@@ -49,10 +52,7 @@ class YoloFacade(torch.nn.Module):
 
         self._grid = [torch.tensor(()), torch.tensor(()), torch.tensor(())]
 
-    def forward(
-        self,
-        batch: Tensor,
-    ) -> Tensor:
+    def forward(self, batch: Tensor) -> List:
         '''
         Args:
             batch: 4D tensor (BxHxWxC) of stacked preprocessed images
@@ -62,8 +62,8 @@ class YoloFacade(torch.nn.Module):
         '''
         batch = batch.to(self.device)
         raw = self.model(batch)
-        res = []
 
+        res = []
         for i in range(len(raw)):
             bs, na, ny, nx, no = raw[i].shape
             if self._grid[i].shape[2:4] != raw[i].shape[2:4]:
@@ -74,8 +74,9 @@ class YoloFacade(torch.nn.Module):
             y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
             res.append(y.view(bs, -1, no))
 
-        return torch.cat(res, 1)
-        # return torch.tensor(()).cpu()
+        return non_max_suppression(
+            torch.cat(res, 1), self.conf_thres, self.iou_thres, agnostic=self.agnostic_nms
+        )
 
     def _make_grid(self, nx: int = 20, ny: int = 20):
         yv, xv = torch.meshgrid((torch.arange(ny, device=self.device), torch.arange(nx, device=self.device)))

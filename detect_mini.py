@@ -68,9 +68,7 @@ def detect(source: str, weights: str, traced: str, imgsz: int, device: torch.dev
             pred = model(img)
         else:
             pred = model(img, augment=augment)[0]
-
-        # Apply NMS
-        pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms)
+            pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms)
 
     # Process detections
     det = pred[0]
@@ -80,3 +78,5 @@ def detect(source: str, weights: str, traced: str, imgsz: int, device: torch.dev
     det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
     print('### Done')
+
+    return det
