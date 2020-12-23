@@ -7,6 +7,8 @@ from models.experimental import attempt_load
 
 File = Path
 
+default_device = torch.device('cpu')
+
 
 class YoloFacade(torch.nn.Module):
     '''Exposes traced NN to final inference via TorchScript.
@@ -23,7 +25,7 @@ class YoloFacade(torch.nn.Module):
         conf_thres: float = 0.25,
         iou_thres: float = 0.45,
         agnostic_nms: bool = True,
-        device: Device,
+        device: Device = default_device,
     ):
         '''
         Args:
