@@ -44,7 +44,7 @@ class YoloFacade(torch.nn.Module):
         self.iou_thres = iou_thres
         self.agnostic_nms = agnostic_nms
 
-        self.model = torch.jit.load(yolo_path.as_posix(), map_location=self.device)
+        self.model = torch.jit.load(traced_path.as_posix(), map_location=self.device)
         self.model.eval()
 
         self._grid = [torch.tensor(()), torch.tensor(()), torch.tensor(())]
