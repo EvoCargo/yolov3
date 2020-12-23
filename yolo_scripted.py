@@ -14,7 +14,10 @@ class DetectionFacade(torch.nn.Module):
     '''
 
     def __init__(
-        self, yolo_path: File,
+        self,
+        yolo_path: File,
+        stride: Tensor,
+        anchor_grid: Tensor,
         device: Device,
         conf_thres: float = 0.25,
         iou_thres: float = 0.45,
@@ -27,6 +30,8 @@ class DetectionFacade(torch.nn.Module):
         '''
         super().__init__()
 
+        self.stride = stride
+        self.anchor_grid = anchor_grid
         self.device = device
         self.conf_thres = conf_thres
         self.iou_thres = iou_thres
@@ -50,16 +55,17 @@ class DetectionFacade(torch.nn.Module):
         '''
         batch = batch.to(self.device)
         raw = self.model(batch)
+        res = []
 
         for i in range(len(raw)):
-            ny, nx = raw[i].shape[2:4]
+            bs, na, no, ny, nx = raw[i].shape[2:4] # wrong
             if self._grid[i].shape[2:4] != raw[i].shape[2:4]:
                 self._grid[i] = self._make_grid(nx, ny)
 
-            # y = raw[i].sigmoid()
-            # y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self._grid[i].to(raw[i].device)) * self.stride[i]  # xy
-            # y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
-            # z.append(y.view(bs, -1, self.no))
+            y = raw[i].sigmoid()
+            y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self._grid[i]) * self.stride[i]  # xy
+            y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
+            res.append(y.view(bs, -1, self.no))
 
         return torch.tensor(()).cpu()
 
