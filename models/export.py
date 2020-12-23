@@ -34,6 +34,7 @@ if __name__ == '__main__':
 
     # Load PyTorch model
     model = attempt_load(opt.weights, map_location=device)  # load FP32 model
+    model.eval()
     labels = model.names
 
     # Checks
