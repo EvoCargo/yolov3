@@ -60,7 +60,6 @@ def detect(source: str, weights: str, traced: str, imgsz: int, device: torch.dev
     augment = False
     conf_thres = 0.25
     iou_thres = 0.45
-    classes = None
     agnostic_nms = True
 
     with torch.no_grad():
@@ -68,7 +67,7 @@ def detect(source: str, weights: str, traced: str, imgsz: int, device: torch.dev
             pred = model(img)
         else:
             pred = model(img, augment=augment)[0]
-            pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms)
+            pred = non_max_suppression(pred, conf_thres, iou_thres, agnostic=agnostic_nms)
 
     # Process detections
     det = pred[0]
