@@ -52,7 +52,7 @@ class YoloFacade(torch.nn.Module):
 
         self._grid = [torch.tensor(()), torch.tensor(()), torch.tensor(())]
 
-    def forward(self, batch: Tensor) -> List:
+    def forward(self, batch: Tensor) -> List[Tensor]:
         '''
         Args:
             batch: 4D tensor (BxHxWxC) of stacked preprocessed images
