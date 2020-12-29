@@ -10,22 +10,14 @@ from yolo_scripted import YoloFacade
 
 
 source = 'test_image.jpg'
-weights = 'yolov3-spp.pt'
-traced = 'yolov3-spp.torchscript.pt'
+weights = 'yolov3-spp.torchscript.pt'
 imgsz = 640
 device = torch.device('cuda:0')
 
 
-def detect(source: str, weights: str, traced: str, imgsz: int, device: torch.device):
-    half = False  # True or False for regular model, False for torchscript
+def detect(source: str, weights: str, imgsz: int, device: torch.device):
+    model = torch.jit.load(weights, map_location=device)
 
-    # Load model
-    if traced:
-        model = YoloFacade.from_checkpoint(weights, traced, device)
-    else:
-        model = attempt_load(weights, map_location=device)  # load FP32 model
-        if half:
-            model.half()  # to FP16
     max_stride = model.stride.max()
     imgsz = check_img_size(imgsz, s=max_stride)  # check img_size
 
@@ -35,24 +27,13 @@ def detect(source: str, weights: str, traced: str, imgsz: int, device: torch.dev
     img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
     img = np.ascontiguousarray(img)
 
-    img = torch.from_numpy(img).to(device)
-    img = img.half() if half else img.float()  # uint8 to fp16/32
+    img = torch.from_numpy(img)
+    img = img.float()  # uint8 to fp16/32
     img /= 255.0  # 0 - 255 to 0.0 - 1.0
     if img.ndimension() == 3:
         img = img.unsqueeze(0)
 
-    # Inference
-    with torch.no_grad():
-        if traced:
-            pred = model(img)
-        else:
-            augment = False
-            conf_thres = 0.25
-            iou_thres = 0.45
-            agnostic_nms = True
-
-            pred = model(img, augment=augment)[0]
-            pred = non_max_suppression(pred, conf_thres, iou_thres, agnostic=agnostic_nms)
+    pred = model(img)
 
     # Process detections
     det = pred[0]
