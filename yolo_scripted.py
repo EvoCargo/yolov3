@@ -2,9 +2,9 @@ from pathlib import Path
 from typing import List
 
 import torch
-from torch import Tensor, device as Device
-
 from models.experimental import attempt_load
+from torch import Tensor
+from torch import device as Device
 from utils.general import non_max_suppression
 
 
@@ -40,9 +40,10 @@ class YoloFacade(torch.nn.Module):
         '''
         super().__init__()
 
-        self.stride = stride
-        self.anchor_grid = anchor_grid
         self.device = device
+
+        self.stride = stride.to(self.device)
+        self.anchor_grid = anchor_grid.to(self.device)
         self.conf_thres = conf_thres
         self.iou_thres = iou_thres
         self.agnostic_nms = agnostic_nms
@@ -70,8 +71,8 @@ class YoloFacade(torch.nn.Module):
                 self._grid[i] = self._make_grid(nx, ny)
 
             y = raw[i].sigmoid()
-            y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self._grid[i]) * self.stride[i]  # xy
-            y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
+            y[..., 0:2] = (y[..., 0:2] * 2.0 - 0.5 + self._grid[i]) * self.stride[i]
+            y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]
             res.append(y.view(bs, -1, no))
 
         return non_max_suppression(
@@ -79,7 +80,9 @@ class YoloFacade(torch.nn.Module):
         )
 
     def _make_grid(self, nx: int = 20, ny: int = 20):
-        yv, xv = torch.meshgrid((torch.arange(ny, device=self.device), torch.arange(nx, device=self.device)))
+        yv, xv = torch.meshgrid(
+            (torch.arange(ny, device=self.device), torch.arange(nx, device=self.device))
+        )
         return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
 
     @classmethod
@@ -97,7 +100,9 @@ class YoloFacade(torch.nn.Module):
         return cls(traced_path, stride, anchor_grid, device=device)
 
     @classmethod
-    def script(cls, yolo_path: File, traced_path: File, scripted_path: File, device: Device):
+    def script(
+        cls, yolo_path: File, traced_path: File, scripted_path: File, device: Device
+    ):
         '''Saves scripted version of Facade to scripted_path
 
         Args:

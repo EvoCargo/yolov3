@@ -1,19 +1,11 @@
-import time
 from pathlib import Path
 
 import cv2
 import numpy as np
 import torch
-
 from models.experimental import attempt_load
 from utils.datasets import letterbox
-from utils.general import (
-    check_img_size,
-    non_max_suppression,
-    scale_coords,
-    xyxy2xywh,
-)
-from utils.plots import plot_one_box
+from utils.general import check_img_size, non_max_suppression, scale_coords
 from yolo_scripted import YoloFacade
 
 
@@ -23,16 +15,9 @@ traced = 'yolov3-spp.torchscript.pt'
 imgsz = 640
 device = torch.device('cuda:0')
 
+
 def detect(source: str, weights: str, traced: str, imgsz: int, device: torch.device):
     half = False  # True or False for regular model, False for torchscript
-
-    save_txt = True
-
-    # Directories
-    save_dir = Path('./inference')
-    (save_dir / 'labels' if save_txt else save_dir).mkdir(
-        parents=True, exist_ok=True
-    )  # make dir
 
     # Load model
     if traced:
@@ -57,15 +42,15 @@ def detect(source: str, weights: str, traced: str, imgsz: int, device: torch.dev
         img = img.unsqueeze(0)
 
     # Inference
-    augment = False
-    conf_thres = 0.25
-    iou_thres = 0.45
-    agnostic_nms = True
-
     with torch.no_grad():
         if traced:
             pred = model(img)
         else:
+            augment = False
+            conf_thres = 0.25
+            iou_thres = 0.45
+            agnostic_nms = True
+
             pred = model(img, augment=augment)[0]
             pred = non_max_suppression(pred, conf_thres, iou_thres, agnostic=agnostic_nms)
 
@@ -75,7 +60,5 @@ def detect(source: str, weights: str, traced: str, imgsz: int, device: torch.dev
         raise ValueError('No predictions')
     # Rescale boxes from img_size to im0 size
     det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
-
-    print('### Done')
 
     return det
