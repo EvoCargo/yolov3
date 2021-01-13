@@ -22,6 +22,7 @@ class YoloFacade(torch.nn.Module):
 
     def __init__(
         self,
+        class_names: List[str],
         traced_path: File,
         stride: Tensor,
         anchor_grid: Tensor,
@@ -32,6 +33,7 @@ class YoloFacade(torch.nn.Module):
     ):
         '''
         Args:
+            class_names: list of string labels of classes
             traced_path: path to traced model
             stride, anchor_grid: params from full fledged model to convert bboxes
                 to original scale
@@ -40,6 +42,7 @@ class YoloFacade(torch.nn.Module):
         '''
         super().__init__()
 
+        self.names = class_names
         self.device = device
 
         self.stride = stride.to(self.device)
@@ -97,7 +100,7 @@ class YoloFacade(torch.nn.Module):
         stride = detect.stride.clone().detach()
         anchor_grid = detect.anchor_grid.clone().detach()
 
-        return cls(traced_path, stride, anchor_grid, device=device)
+        return cls(model.names, traced_path, stride, anchor_grid, device=device)
 
     @classmethod
     def script(
