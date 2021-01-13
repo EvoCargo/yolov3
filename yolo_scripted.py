@@ -62,7 +62,11 @@ class YoloFacade(torch.nn.Module):
             batch: 4D tensor (BxHxWxC) of stacked preprocessed images
 
         Returns:
-            Bounding boxes and confidences of detections
+            List (of len B) of prediction tensors for each image in batch.
+            Each tensor is (#predictions_on_image, 6) shaped.
+            First 4 values in prediction is tlbr coordinates of detected bbox,
+                next is confidence and last is class label
+                (class names available in `names` attribute)
         '''
         batch = batch.to(self.device)
         raw = self.model(batch)
