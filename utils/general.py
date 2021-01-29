@@ -359,7 +359,7 @@ def non_max_suppression(
         output[xi] = x[i]
         # if (time.time() - t) > time_limit:
         #     break  # time limit exceeded
-
+        
     return output
 
 
