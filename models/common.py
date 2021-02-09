@@ -1,7 +1,6 @@
 # This file contains modules common to various models
 
 import math
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -168,8 +167,7 @@ class autoShape(nn.Module):
 
         # Post-process
         for i in batch:
-            if y[i] is not None:
-                y[i][:, :4] = scale_coords(shape1, y[i][:, :4], shape0[i])
+            scale_coords(shape1, y[i][:, :4], shape0[i])
 
         return Detections(imgs, y, self.names)
 
@@ -178,13 +176,13 @@ class Detections:
     # detections class for YOLOv5 inference results
     def __init__(self, imgs, pred, names=None):
         super(Detections, self).__init__()
+        d = pred[0].device  # device
+        gn = [torch.tensor([*[im.shape[i] for i in [1, 0, 1, 0]], 1., 1.], device=d) for im in imgs]  # normalizations
         self.imgs = imgs  # list of images as numpy arrays
         self.pred = pred  # list of tensors pred[0] = (xyxy, conf, cls)
         self.names = names  # class names
         self.xyxy = pred  # xyxy pixels
         self.xywh = [xyxy2xywh(x) for x in pred]  # xywh pixels
-        d = pred[0].device  # device
-        gn = [torch.tensor([*[im.shape[i] for i in [1, 0, 1, 0]], 1., 1.], device=d) for im in imgs]  # normalizations
         self.xyxyn = [x / g for x, g in zip(self.xyxy, gn)]  # xyxy normalized
         self.xywhn = [x / g for x, g in zip(self.xywh, gn)]  # xywh normalized
         self.n = len(self.pred)
@@ -244,7 +242,7 @@ class Classify(nn.Module):
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1):  # ch_in, ch_out, kernel, stride, padding, groups
         super(Classify, self).__init__()
         self.aap = nn.AdaptiveAvgPool2d(1)  # to x(b,c1,1,1)
-        self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False)  # to x(b,c2,1,1)
+        self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g)  # to x(b,c2,1,1)
         self.flat = Flatten()
 
     def forward(self, x):
