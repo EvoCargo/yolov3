@@ -23,14 +23,18 @@ if __name__ == '__main__':
     parser.add_argument('--weights', type=str, default='./yolov3.pt', help='weights path')  # from yolov3/models/
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')  # height, width
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
+    parser.add_argument('--device', type=str, default='cpu', help='device to script to')
     opt = parser.parse_args()
+
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
+    device = torch.device(opt.device)
     print(opt)
     set_logging()
     t = time.time()
 
     # Load PyTorch model
-    model = attempt_load(opt.weights, map_location=torch.device('cpu'))  # load FP32 model
+    model = attempt_load(opt.weights, map_location=device)  # load FP32 model
+    model.eval()
     labels = model.names
 
     # Checks
@@ -38,7 +42,7 @@ if __name__ == '__main__':
     opt.img_size = [check_img_size(x, gs) for x in opt.img_size]  # verify img_size are gs-multiples
 
     # Input
-    img = torch.zeros(opt.batch_size, 3, *opt.img_size)  # image size(1,3,320,192) iDetection
+    img = torch.zeros(opt.batch_size, 3, *opt.img_size, device=device)  # image size(1,3,320,192) iDetection
 
     # Update model
     for k, m in model.named_modules():
